@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AgentOps 2.0 — Project Journey</title>
+<style>
+  :root { --ink:#0f172a; --muted:#475569; --line:#e2e8f0; --accent:#0284c7; --bg:#ffffff; }
+  * { box-sizing: border-box; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: var(--ink); background: var(--bg); margin: 0; font-size: 11pt; line-height: 1.55; }
+  .page { max-width: 780px; margin: 0 auto; padding: 48px 40px; }
+  .cover { text-align: center; padding: 90px 0 60px; border-bottom: 3px solid var(--ink); margin-bottom: 36px; }
+  .cover h1 { font-size: 34pt; margin: 0 0 8px; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 13pt; color: var(--muted); }
+  .cover .meta { margin-top: 28px; font-size: 10pt; color: var(--muted); }
+  .cover .meta span { margin: 0 10px; }
+  h2 { font-size: 15pt; border-bottom: 2px solid var(--ink); padding-bottom: 4px; margin: 34px 0 10px; }
+  h3 { font-size: 12pt; margin: 18px 0 6px; color: var(--accent); }
+  p { margin: 7px 0; }
+  ul, ol { margin: 6px 0 6px 22px; padding: 0; }
+  li { margin: 3px 0; }
+  code, pre { font-family: 'Courier New', monospace; font-size: 9pt; }
+  pre { background: #f1f5f9; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; white-space: pre-wrap; word-wrap: break-word; }
+  code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 9.5pt; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; font-family: Arial, sans-serif; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.4px; }
+  .flow { background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; font-family: 'Courier New', monospace; font-size: 9.5pt; margin: 12px 0; }
+  .badge { display: inline-block; background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 20px; padding: 2px 10px; font-size: 8.5pt; font-family: Arial; margin-right: 6px; }
+  .badge.blue { background: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+  .badge.gray { background: #f1f5f9; color: #475569; border-color: var(--line); }
+  .note { border-left: 3px solid var(--accent); background: #f0f9ff; padding: 10px 14px; margin: 14px 0; font-size: 10pt; }
+  .pb { page-break-before: always; }
+  .small { font-size: 9pt; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="cover">
+    <h1>AgentOps 2.0</h1>
+    <div class="sub">Autonomous IoT Fleet Intelligence — Complete Build &amp; Deployment Journey</div>
+    <div class="meta">
+      <span><b>Live:</b> agentops-o50e.onrender.com</span>
+      <span><b>Repo:</b> github.com/tjmhmdaarif/agentops</span>
+    </div>
+    <div class="meta"><span>Built October 6, 2026 — concept to production in one day</span></div>
+    <div class="meta" style="margin-top:14px">
+      <span class="badge">58/58 tests</span>
+      <span class="badge blue">CI green</span>
+      <span class="badge blue">Production live</span>
+      <span class="badge gray">59 FPS</span>
+    </div>
+  </div>
+
+  <h2>1. What the product is</h2>
+  <p>An autonomous AIOps platform: a simulated IoT fleet streams telemetry; a hybrid anomaly-detection engine finds faults; an autonomous agent investigates, decides, remediates, <i>verifies recovery</i>, and closes or escalates incidents — every step persisted and streamed live to a cinematic dark dashboard wrapped in a WebGL particle-globe landing experience.</p>
+  <div class="flow">SIMULATED FLEET (12 devices × 7 metrics, 12 failure scenarios)<br>
+  → HYBRID DETECTION (robust z-score + fast/slow EWMA + rate-of-change + Isolation Forest)<br>
+  → INCIDENT MANAGER (persistence · cooldowns · correlated grouping · watchdog)<br>
+  → AUTONOMOUS AGENT (investigate → decide → remediate → verify → resolve/escalate)<br>
+  → SSE EVENT STREAM → REACT DASHBOARD (live)<br>
+  → PARTICLE GLOBE (30k real land points → dissolve → login → deep-space app background)</div>
+  <p>No LLM key required — deterministic rule engine by default; optional Anthropic mode with validated structured output and automatic rule fallback. Single Docker container serves API + UI. Login-gated. CI-gated. One-click rollback.</p>
+
+  <h2>2. Architecture</h2>
+  <pre>React/Vite (dashboard, lazy three.js chunk)
+      │ REST (Pydantic schemas) + SSE (/api/events/stream, cookie-auth)
+      ▼
+FastAPI ── SimulationEngine (tick-driven, seeded RNG)
+       ├─ HybridDetector (zscore/ewma/rate/iforest → fused score)
+       ├─ IncidentManager (lifecycle state machine)
+       ├─ AgentRuntime (per-incident state machines, 12-tool registry)
+       ├─ AuthService (PBKDF2, DB sessions, httpOnly cookies)
+       └─ SQLite via repository layer (batch writes, indexed)</pre>
+  <p>Deliberately lightweight: no Kafka, Redis, or Celery. <code>DATABASE_URL</code> can move to PostgreSQL later with zero code changes.</p>
+
+  <h2>3. Build phases (in order)</h2>
+  <ol>
+    <li><b>Backend core</b> — env config, event bus, logging, SQLAlchemy models + repository, Pydantic schemas.</li>
+    <li><b>Simulation</b> — seeded per-device baselines + diurnal drift, 12 failure scenarios, ambient injector, demo script.</li>
+    <li><b>Detection</b> — robust z-score, EWMA divergence, gated ROC, per-device Isolation Forests; fusion + suppression.</li>
+    <li><b>Incident manager</b> — lifecycle state machine, cross-metric grouping, offline watchdog.</li>
+    <li><b>Tools + agent</b> — 12-tool registry (risk classes, idempotency), agent state machine, rule chains, recovery verification, LLM fallback.</li>
+    <li><b>API + SSE</b> — full REST surface, simulation control, injection, analytics, one event stream.</li>
+    <li><b>Tests</b> — 58 tests including a deterministic end-to-end autonomous-loop test.</li>
+    <li><b>Frontend</b> — fleet grid, live charts, incident timeline drawer, analytics, simulation control, settings.</li>
+    <li><b>Scenario validation</b> — all 12 failure scenarios verified end-to-end, with and without Isolation Forest.</li>
+    <li><b>Auth</b> — PBKDF2 users, DB sessions, cookie middleware, landing/login, change-password.</li>
+    <li><b>Cinematic globe</b> — Natural Earth → 30k particles, GPU dissolution, drag physics, starfield/dust/nebula.</li>
+    <li><b>Ship</b> — Docker, compose, render.yaml, CI, docs → GitHub → Render production.</li>
+  </ol>
+
+  <div class="pb"></div>
+  <h2>4. Real bugs found &amp; fixed</h2>
+  <table>
+    <tr><th>#</th><th>Bug</th><th>Root cause</th><th>Fix</th></tr>
+    <tr><td>1</td><td>Z-score stopped firing mid-fault</td><td>Window absorbed the anomaly into its baseline</td><td>Median/MAD robust statistics</td></tr>
+    <tr><td>2</td><td>EWMA never caught slow ramps</td><td>It chased the drift</td><td>Fast/slow divergence + gated adaptation</td></tr>
+    <tr><td>3</td><td>EWMA self-masked anomalies</td><td>Fault inflated residual variance</td><td>Freeze variance in abnormal regime + noise floor</td></tr>
+    <tr><td>4</td><td>Isolation Forest scoring 28 ms/call</td><td>sklearn joblib dispatch per call</td><td>Manual path-length scoring, validated vs sklearn (~60× faster)</td></tr>
+    <tr><td>5</td><td>IF scores compressed</td><td>Inliers sit near decision boundary</td><td>Sigmoid calibrated on training-score mean/std</td></tr>
+    <tr><td>6</td><td>Warmup false positives</td><td>Unstable early MAD estimates</td><td>Min-sample + override maturity gates</td></tr>
+    <tr><td>7</td><td>Recovery looked anomalous</td><td>Rolling window contaminated by incident</td><td>Verify against gated EWMA baseline</td></tr>
+    <tr><td>8</td><td>Restart didn't revive offline device</td><td>Offline ticks kept old maximum</td><td>restart() sets exactly 2 reboot ticks</td></tr>
+    <tr><td>9</td><td>Correlated failure → 3 parallel incidents</td><td>Grouping was per-metric only</td><td>Device-level correlated grouping</td></tr>
+    <tr><td>10</td><td>SSE test hung forever</td><td>TestClient can't consume infinite streams</td><td>Test SSE via real uvicorn thread</td></tr>
+    <tr><td>11</td><td>/incidents 404 on refresh</td><td>StaticFiles isn't an SPA</td><td>Catch-all fallback → index.html</td></tr>
+    <tr><td>12</td><td>Black screen after navigation</td><td>framer-motion exit phase stranded opacity 0</td><td>Keyed remount, no exit animation</td></tr>
+    <tr><td>13</td><td>Feed flooded by repeat anomalies</td><td>Detector emits per tick during persistence</td><td>Coalesce repeats in the store</td></tr>
+    <tr><td>14</td><td>Globe was a white blob</td><td>Point size 10× too large</td><td>Perspective size constant tuned (140→26)</td></tr>
+    <tr><td>15</td><td><b>Render deploy failed at startup</b></td><td>Relative DATABASE_URL resolved against container CWD; directory missing</td><td>_ensure_sqlite_parent_dir() + mkdir in Dockerfile; CI proved the fix</td></tr>
+    <tr><td>16</td><td>"Invalid credentials" on production</td><td>Expected: Render auto-generated ADMIN_PASSWORD</td><td>Read from Environment tab (by design)</td></tr>
+  </table>
+
+  <h2>5. Verification record</h2>
+  <ul>
+    <li><b>pytest: 58/58 passed</b> — simulator, detectors (incl. IF fast-path parity), agent rules/chains, idempotency, LLM fallback, API, auth, live SSE, deterministic end-to-end.</li>
+    <li><b>GitHub CI green on main</b> — Backend tests ✓ Frontend build ✓ Docker build + container health smoke ✓.</li>
+    <li><b>Browser-verified (Playwright)</b> — globe form/drag/dissolve, login, dashboard-over-space, incident drawer, analytics, simulation. <b>59 FPS / 27 MB heap.</b></li>
+    <li><b>Production-verified</b> — health endpoint healthy, simulation running, API 401 without session, demo credentials hidden.</li>
+  </ul>
+
+  <h2>6. Commands</h2>
+  <pre># Run locally (Windows)
+./start-backend.ps1                          # http://localhost:8000
+cd frontend && npm run dev                   # optional hot-reload UI on :5173
+
+# Tests
+cd backend && .venv/Scripts/python -m pytest tests -q
+
+# Frontend build
+cd frontend && npm run build
+
+# Docker
+docker compose up --build
+
+# Daily dev loop (feature branches only — main is protected)
+git checkout -b feature/&lt;name&gt;
+# ... code ... tests + build must be green ...
+git push -u origin feature/&lt;name&gt;   # → PR → CI → squash merge → Render auto-deploys</pre>
+
+  <div class="pb"></div>
+  <h2>7. Production operations</h2>
+  <table>
+    <tr><th>Task</th><th>Where</th></tr>
+    <tr><td>URL</td><td>https://agentops-o50e.onrender.com</td></tr>
+    <tr><td>Admin password</td><td>Render → agentops → Environment → ADMIN_PASSWORD (auto-generated)</td></tr>
+    <tr><td>Change password</td><td>In-app Settings → Change Password</td></tr>
+    <tr><td>Redeploy</td><td>Automatic on git push to main (or Manual Deploy)</td></tr>
+    <tr><td>Rollback</td><td>Render → Events → previous deploy · flip FEATURE_FLAGS · git revert</td></tr>
+    <tr><td>Branch protection</td><td>main requires Backend tests + Frontend build + Docker build; force-push blocked</td></tr>
+    <tr><td>Free-tier nap</td><td>Sleeps after 15 min idle; ~50 s cold start — normal</td></tr>
+    <tr><td>Data</td><td>SQLite resets on redeploy/restart (demo re-seeds itself); PostgreSQL later via DATABASE_URL</td></tr>
+  </table>
+
+  <h2>8. Disaster recovery — restore on a new machine</h2>
+  <pre># 1. Install: Python 3.12+, Node 20+, git
+git clone https://github.com/tjmhmdaarif/agentops.git
+cd agentops
+
+# 2. Backend
+python -m venv backend/.venv
+backend/.venv/Scripts/pip install -r backend/requirements.txt    # Windows
+# backend/.venv/bin/pip install -r backend/requirements.txt      # macOS/Linux
+
+# 3. Frontend
+cd frontend && npm install && npm run build && cd ..
+
+# 4. Run
+./start-backend.ps1
+# open http://localhost:8000 — fleet boots; dev login: admin / agentops
+
+# 5. Re-deploy anywhere: repo includes Dockerfile + render.yaml —
+#    Render Blueprint or Railway picks them up automatically.</pre>
+  <div class="note"><b>Secrets policy:</b> the production admin password lives only in Render's Environment — never in git. Local dev credentials (admin/agentops) apply only to fresh local databases.</div>
+
+  <h2>9. Feature flags — the experiment safety valve</h2>
+  <pre>FEATURE_FLAGS="predictive_health=true,chaos_controls=false"</pre>
+  <p>Default OFF in main. Flag OFF = the feature 404s and its UI hides. Flip flags in Render → Environment for a sub-minute rollback without redeploying. Reference implementation: the <code>predictive_health</code> flag and its experimental failure-risk card.</p>
+
+  <h2>10. Where to continue</h2>
+  <ul>
+    <li>Alert webhooks on escalation; human-approval queue for HIGH_RISK tools</li>
+    <li>Seasonal (hour-of-day) baselines and per-device adaptive thresholds</li>
+    <li>Cross-device root-cause correlation; PostgreSQL persistence</li>
+    <li>Custom domain / named Cloudflare tunnel</li>
+  </ul>
+  <p class="small">Process: feature branch → flag → CI green → squash merge → tag → auto-deploy. Rollback: flag flip (&lt;1 min) → Render previous deploy (~2 min) → git revert (permanent).</p>
+
+  <h2>Appendix — links</h2>
+  <ul>
+    <li>Production: https://agentops-o50e.onrender.com</li>
+    <li>Repository: https://github.com/tjmhmdaarif/agentops</li>
+    <li>Legacy (original Streamlit, archived): https://github.com/tjmhmdaarif/agentops-legacy</li>
+    <li>CI: https://github.com/tjmhmdaarif/agentops/actions</li>
+  </ul>
+  <p class="small">Generated from docs/PROJECT_JOURNEY.md — keep both with the project.</p>
+
+</div>
+</body>
+</html>
