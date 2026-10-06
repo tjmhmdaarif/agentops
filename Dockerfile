@@ -28,7 +28,7 @@ COPY backend/ /app/backend/
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 
 WORKDIR /app/backend
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/backend/data
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
