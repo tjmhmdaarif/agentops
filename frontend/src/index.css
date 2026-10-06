@@ -14,11 +14,9 @@ body,
 }
 
 body {
-  @apply bg-ink-950 text-slate-200 font-sans antialiased;
-  background-image:
-    radial-gradient(1200px 600px at 85% -10%, rgba(56, 189, 248, 0.05), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(16, 185, 129, 0.04), transparent 60%);
-  background-attachment: fixed;
+  @apply text-slate-200 font-sans antialiased;
+  /* The WebGL space scene (or its static fallback) is the page background. */
+  background-color: #04060b;
 }
 
 ::selection {

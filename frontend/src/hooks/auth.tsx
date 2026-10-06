@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authApi } from "../lib/api";
 import { Spinner } from "../components/primitives";
-import LandingPage from "../pages/LandingPage";
+import { EntryOverlay } from "../three/EntryOverlay";
+import { useScene } from "../three/sceneStore";
 
 type AuthState =
   | { status: "loading" }
@@ -17,14 +18,19 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: "loading" });
+  const scene = useScene();
 
   const check = () => {
     authApi
       .me()
-      .then((r) => setState({ status: "authenticated", username: r.username }))
+      .then((r) => {
+        setState({ status: "authenticated", username: r.username });
+        scene.transitionTo("SPACE_BACKGROUND");
+      })
       .catch(() => setState({ status: "unauthenticated" }));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     check();
     const onExpired = () => setState({ status: "unauthenticated" });
@@ -40,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
   if (state.status === "unauthenticated") {
-    return <LandingPage onLogin={check} />;
+    return <EntryOverlay onAuthenticated={check} />;
   }
   return (
     <AuthContext.Provider
@@ -48,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         username: state.username,
         logout: async () => {
           await authApi.logout().catch(() => undefined);
+          scene.transitionTo("GLOBE_ACTIVE");
           setState({ status: "unauthenticated" });
         },
       }}
