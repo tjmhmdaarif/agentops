@@ -57,6 +57,14 @@ export function LiveChart({ fixedDeviceId, height = 260 }: { fixedDeviceId?: str
   const [band, setBand] = useState<[number, number] | null>(null);
   const lastSeen = useRef<Record<string, number>>({});
 
+  // First-load default: preselect the first device so the chart is never blank.
+  useEffect(() => {
+    if (!fixedDeviceId && selected.length === 0 && deviceOrder.length > 0) {
+      setSelected([deviceOrder[0]]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceOrder.length > 0]);
+
   const activeDevices = fixedDeviceId ? [fixedDeviceId] : selected.slice(0, 3);
 
   // Initial history load
