@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Data / runtime state
+data/*.db
+data/*.db-journal
+*.db
+
+# Secrets & local env
+.env
+.env.local
+
+# Tooling
+.playwright-cli/
+cloudflared.exe
+.DS_Store

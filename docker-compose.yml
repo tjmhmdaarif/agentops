@@ -1,0 +1,18 @@
+services:
+  agentops:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      DATABASE_URL: sqlite:///./data/agentops.db
+      SIMULATION_ENABLED: "true"
+      SIMULATION_AUTOSTART: "true"
+      LLM_ENABLED: "false"
+      # ANTHROPIC_API_KEY: ""   # uncomment + LLM_ENABLED=true for LLM mode
+    volumes:
+      - agentops-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  agentops-data:

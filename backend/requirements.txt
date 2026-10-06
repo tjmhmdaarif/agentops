@@ -1,0 +1,11 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+sqlalchemy>=2.0
+numpy>=1.26
+scikit-learn>=1.4
+httpx>=0.27
+python-dotenv>=1.0
+pytest>=8.0
+# Optional LLM mode (only needed when LLM_ENABLED=true):
+# anthropic>=0.40
