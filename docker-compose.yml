@@ -9,6 +9,10 @@ services:
       SIMULATION_ENABLED: "true"
       SIMULATION_AUTOSTART: "true"
       LLM_ENABLED: "false"
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-agentops}   # override in your shell/.env
+      SHOW_DEMO_CREDS: "false"
+      FEATURE_FLAGS: predictive_health=false
       # ANTHROPIC_API_KEY: ""   # uncomment + LLM_ENABLED=true for LLM mode
     volumes:
       - agentops-data:/app/data
