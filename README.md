@@ -10,7 +10,14 @@ LLM mode (Anthropic) is an optional drop-in with strict tool allowlisting and au
 
 ---
 
-## 30-second demo
+## Agentops commercial
+
+
+Uploading redpandacompress_agentops-commercial-v2.mp4…
+
+
+
+
 
 ```bash
 docker compose up --build        # or see Local Setup below
