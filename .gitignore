@@ -9,6 +9,7 @@ venv/
 # Node
 node_modules/
 frontend/dist/
+*.tsbuildinfo
 
 # Data / runtime state
 data/*.db
@@ -23,3 +24,9 @@ data/*.db-journal
 .playwright-cli/
 cloudflared.exe
 .DS_Store
+
+# Vercel (local project link created by the CLI — not committed)
+.vercel
+
+# Local scratch logs
+*.log

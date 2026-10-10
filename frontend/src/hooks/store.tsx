@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api } from "../lib/api";
+import { api, SSE_URL } from "../lib/api";
 import { metricLabel } from "../lib/format";
 import type {
   AppConfig,
@@ -121,7 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const connect = () => {
       if (closed) return;
-      es = new EventSource("/api/events/stream");
+      es = new EventSource(SSE_URL, { withCredentials: true });
       es.addEventListener("connected", () => {
         retry = 0;
         setConnection("live");

@@ -13,10 +13,22 @@ import type {
 
 const BASE = "/api";
 
+// Split-deploy support: when the frontend is hosted separately from the API
+// (e.g. frontend on Vercel, backend on Render), set VITE_API_URL to the backend
+// origin (e.g. https://agentops.onrender.com). In that cross-origin case we must
+// send credentials ("include") so the httpOnly session cookie flows with requests.
+const API_ORIGIN = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+const API_BASE = API_ORIGIN ? `${API_ORIGIN}/api` : "/api";
+const CREDENTIALS: RequestCredentials = API_ORIGIN ? "include" : "same-origin";
+
+// Absolute origin of the SSE stream (EventSource can't use a relative URL when the
+// API lives on a different origin than the frontend).
+export const SSE_URL = API_ORIGIN ? `${API_ORIGIN}/api/events/stream` : "/api/events/stream";
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
+    credentials: CREDENTIALS,
     ...init,
   });
   if (res.status === 401 && !path.startsWith("/auth/")) {

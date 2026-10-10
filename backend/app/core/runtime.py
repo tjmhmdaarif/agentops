@@ -151,7 +151,11 @@ class AgentOpsRuntime:
                 except Exception:
                     log.exception("tick_error")
                 elapsed = time.perf_counter() - started
-                await asyncio.sleep(max(0.02, interval / self.engine.speed - elapsed))
+                # Guard against a zero/negative speed (e.g. SIMULATION_SPEED=0 in
+                # the environment) — without this the divide would raise and kill
+                # the background loop, silently freezing the whole simulation.
+                speed = self.engine.speed if self.engine.speed and self.engine.speed > 0 else 1.0
+                await asyncio.sleep(max(0.02, interval / speed - elapsed))
             else:
                 await asyncio.sleep(0.2)
 

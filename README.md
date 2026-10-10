@@ -154,7 +154,7 @@ agentops-2/
 │   │   ├── agent/                  # state, rules, agent loop, llm, prompts
 │   │   ├── tools/                  # registry + investigation/remediation tools
 │   │   └── services/               # fleet, telemetry, incident, analytics
-│   ├── tests/                      # 56 tests incl. deterministic end-to-end
+│   ├── tests/                      # 58 tests incl. deterministic end-to-end
 │   └── requirements.txt
 ├── frontend/
 │   └── src/{components,pages,hooks,lib,types}
@@ -207,7 +207,7 @@ docker run -p 8000:8000 agentops
 ```bash
 cd backend
 .venv/Scripts/python -m pytest tests -q
-# 56 passed — simulator, detectors (incl. Isolation Forest fast-path parity),
+# 58 passed — simulator, detectors (incl. Isolation Forest fast-path parity),
 # agent rules/chains/idempotency/LLM-fallback, API, SSE (live server),
 # and a deterministic end-to-end autonomous-loop test
 ```
@@ -219,15 +219,90 @@ See [.env.example](.env.example). Highlights: `DATABASE_URL` (SQLite default, Po
 `ADMIN_PASSWORD`, `SHOW_DEMO_CREDS`, `FEATURE_FLAGS`, `LLM_ENABLED` + `ANTHROPIC_API_KEY`
 (optional), `PORT`.
 
-## Deployment
+# Deployment
 
-Full guide: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Render blueprint (`render.yaml`
-included), Railway (Dockerfile auto-detected), or an instant public demo via Cloudflare
-quick tunnel (`cloudflared tunnel --url http://localhost:8000`, no account needed).
+AgentOps 2.0 has two supported deployment shapes. **Pick one.**
 
-**Production checklist:** set `APP_ENV=production`, strong `ADMIN_PASSWORD`,
-`SHOW_DEMO_CREDS=false`. Free-tier filesystems are ephemeral — the SQLite demo DB resets
-on redeploy; attach PostgreSQL via `DATABASE_URL` for persistence.
+| Shape | Frontend | Backend | Best for |
+|---|---|---|---|
+| **A · All-in-one (default)** | served by the API | Render / Railway / Fly / VPS (Docker) | simplest; one URL, one container |
+| **B · Split** | **Vercel** | Render / Railway / Fly (Docker) | fast global CDN for the UI; backend stays a persistent process |
+
+> **Why not deploy the whole thing to Vercel?** The backend runs a continuous
+> simulation loop, streams live data over SSE, and keeps state in memory + SQLite.
+> Vercel serverless functions are stateless and short-lived — they can't keep a
+> `while True` loop alive or hold a long SSE connection. So the **frontend** (a
+> static React build) is a perfect fit for Vercel, while the **backend** must run
+> on a persistent host (Render/Railway/Fly). Shape B below does exactly that.
+
+---
+
+## Shape A — All-in-one (Docker on Render)
+
+One container serves the API **and** the built UI from a single process. No code
+changes; no extra env vars.
+
+```bash
+docker compose up --build          # local → http://localhost:8000
+```
+
+**Render (blueprint included):** push to GitHub → Render → *New → Blueprint* → it
+reads `render.yaml`. Render generates a strong `ADMIN_PASSWORD` at first deploy
+and sets `SHOW_DEMO_CREDS=false`.
+
+Production checklist: `APP_ENV=production`, strong `ADMIN_PASSWORD`,
+`SHOW_DEMO_CREDS=false`, and attach PostgreSQL via `DATABASE_URL` for persistence
+(free-tier SQLite resets on redeploy).
+
+---
+
+## Shape B — Split: Frontend on Vercel + Backend on Render
+
+### 1) Backend on Render (same as Shape A)
+Deploy the Docker service via `render.yaml` (or Railway/Fly). Note its public URL,
+e.g. `https://agentops.onrender.com`. Set:
+
+- `APP_ENV=production`
+- `CORS_ORIGINS=https://<your-vercel-domain>` (comma-separate if multiple)
+- `SHOW_DEMO_CREDS=false`, strong `ADMIN_PASSWORD`
+
+The backend already returns `SameSite=None; Secure` cookies in production, so the
+session works cross-origin from the Vercel frontend.
+
+### 2) Frontend on Vercel
+The repo is ready — `frontend/vercel.json` configures the Vite build + SPA rewrites.
+
+**Via dashboard (recommended):**
+1. Vercel → *Add New → Project* → import the `agentops` repo.
+2. **Root Directory:** `frontend`
+3. **Framework Preset:** Vite (build `npm run build`, output `dist` — auto-detected)
+4. **Environment Variable:** `VITE_API_URL = https://agentops.onrender.com`
+5. Deploy → you get a live URL like `https://agentops.vercel.app`.
+
+**Via CLI (from the repo root):**
+```bash
+npm i -g vercel
+cd frontend
+vercel            # first run: link project, set Root Directory = frontend
+vercel env add VITE_API_URL production   # paste the Render backend origin
+vercel --prod
+```
+
+> ⚠️ `VITE_*` values are baked in **at build time**. After changing `VITE_API_URL`,
+> **redeploy** (don't just restart) so the new value is compiled into the bundle.
+
+### 3) Connect them
+Set the backend's `CORS_ORIGINS` to include your Vercel domain, then redeploy the
+backend once. Health check stays public: `https://agentops.onrender.com/api/health`.
+
+---
+
+## Instant public demo (either shape)
+
+```bash
+cloudflared tunnel --url http://localhost:8000   # no account needed
+```
+
 
 ## Safe daily development (experiment without breaking production)
 

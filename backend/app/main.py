@@ -68,7 +68,7 @@ def build_app(settings: Settings | None = None) -> FastAPI:
     async def auth_middleware(request: Request, call_next):
         """Session-cookie gate for the whole API (health + login stay public)."""
         path = request.url.path
-        if path.startswith("/api/") and not any(path == p or path.startswith(p + "?") for p in AUTH_PUBLIC):
+        if path.startswith("/api/") and path not in AUTH_PUBLIC:
             username = runtime.auth.resolve(request.cookies.get(SESSION_COOKIE))
             if username is None:
                 return JSONResponse(
@@ -85,8 +85,11 @@ def build_app(settings: Settings | None = None) -> FastAPI:
     @app.exception_handler(Exception)
     async def unhandled(request: Request, exc: Exception) -> JSONResponse:
         log.exception("unhandled_error path=%s", request.url.path)
+        # Only expose internal error detail outside production — in prod, leaking
+        # exception text can disclose SQL, paths, or internals to clients.
+        detail = str(exc) if settings.app_env != "production" else "Internal server error"
         return JSONResponse(status_code=500, content={
-            "error": {"type": type(exc).__name__, "message": str(exc)}
+            "error": {"type": type(exc).__name__, "message": detail}
         })
 
     @app.get("/api/health", response_model=HealthOut)

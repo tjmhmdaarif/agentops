@@ -13,9 +13,6 @@ from app.core.auth import SESSION_COOKIE
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-PUBLIC_PREFIXES = ("/api/health", "/api/auth/login")
-PUBLIC_EXACT = {"/api/health"}
-
 
 class LoginRequest(BaseModel):
     username: str
@@ -38,12 +35,16 @@ def login(body: LoginRequest, request: Request) -> JSONResponse:
     token = auth.create_session(body.username)
     settings = request.app.state.settings
     response = JSONResponse({"ok": True, "username": body.username})
+    # Cross-origin split deploy (frontend on Vercel, API on Render): the cookie
+    # must be SameSite=None + Secure or the browser drops it on cross-site requests
+    # and auth silently fails. Same-origin deploys keep the stricter Lax.
+    cross_site = settings.app_env == "production"
     response.set_cookie(
         SESSION_COOKIE, token,
         max_age=7 * 24 * 3600,
         httponly=True,
-        samesite="lax",
-        secure=settings.app_env == "production",
+        samesite="none" if cross_site else "lax",
+        secure=cross_site,
     )
     return response
 

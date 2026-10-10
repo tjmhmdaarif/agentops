@@ -103,6 +103,8 @@ class Settings:
         s.simulation_enabled = _env_bool("SIMULATION_ENABLED", s.simulation_enabled)
         s.simulation_autostart = _env_bool("SIMULATION_AUTOSTART", s.simulation_autostart)
         s.simulation_speed = _env_float("SIMULATION_SPEED", s.simulation_speed)
+        if s.simulation_speed <= 0:  # guard: a zero/negative speed breaks the tick loop
+            s.simulation_speed = 1.0
         s.device_count = _env_int("DEVICE_COUNT", s.device_count)
         seed = os.getenv("RANDOM_SEED")
         s.random_seed = int(seed) if seed not in (None, "", "none") else None
